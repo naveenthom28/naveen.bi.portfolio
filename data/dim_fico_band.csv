@@ -1,0 +1,7 @@
+fico_band_id,fico_band,score_range,min_score,max_score
+1,Deep Subprime,300-579,300,579
+2,Subprime,580-619,580,619
+3,Near Prime,620-659,620,659
+4,Prime,660-719,660,719
+5,Prime Plus,720-779,720,779
+6,Super Prime,780-850,780,850

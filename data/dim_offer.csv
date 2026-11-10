@@ -1,0 +1,13 @@
+offer_id,offer_name,offer_type,offer_medium
+101,Pre-Select Offer 1,Pre-Select,Direct Mail
+102,Pre-Select Offer 2,Pre-Select,Direct Mail
+103,Pre-Select Offer 3,Pre-Select,Direct Mail
+104,Pre-Select Offer 4,Pre-Select,Direct Mail
+105,ITA Offer 1,ITA,Email
+106,ITA Offer 2,ITA,Email
+107,ITA Offer 3,ITA,Email
+108,ITA Offer 4,ITA,Email
+109,Partner Promo Offer 1,Partner Promo,Partner Site
+110,Partner Promo Offer 2,Partner Promo,Partner Site
+111,Partner Promo Offer 3,Partner Promo,Partner Site
+112,No Offer (Direct),Direct,Organic
