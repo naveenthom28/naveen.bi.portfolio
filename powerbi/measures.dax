@@ -1,0 +1,92 @@
+// =============================================================================
+// NBank Credit Card Application Trends - DAX measures
+// Table names match the star schema in sql/01_create_tables.sql.
+// Mark DimDate as a date table and relate DimDate[Date] -> fact_applications[application_date].
+// =============================================================================
+
+// ---- Date table -------------------------------------------------------------
+DimDate =
+ADDCOLUMNS (
+    CALENDAR ( DATE ( 2024, 1, 1 ), DATE ( 2025, 12, 31 ) ),
+    "Year", YEAR ( [Date] ),
+    "Month Number", MONTH ( [Date] ),
+    "Month", FORMAT ( [Date], "MMM" ),
+    "Year-Month", FORMAT ( [Date], "YYYY-MM" ),
+    "Quarter", "Q" & QUARTER ( [Date] )
+)
+
+// ---- Volume -----------------------------------------------------------------
+Total Applications = COUNTROWS ( fact_applications )
+
+Approved Applications =
+CALCULATE (
+    [Total Applications],
+    fact_applications[decision] IN { "Approved", "Counteroffer" }
+)
+
+Straight Approvals =
+CALCULATE ( [Total Applications], fact_applications[decision] = "Approved" )
+
+Counteroffers =
+CALCULATE ( [Total Applications], fact_applications[decision] = "Counteroffer" )
+
+Declined Applications =
+CALCULATE ( [Total Applications], fact_applications[decision] = "Declined" )
+
+Booked Accounts = SUM ( fact_applications[booked_flag] )
+
+// ---- Rates ------------------------------------------------------------------
+Approval Rate = DIVIDE ( [Approved Applications], [Total Applications] )
+
+Decline Rate = DIVIDE ( [Declined Applications], [Total Applications] )
+
+Counteroffer Share = DIVIDE ( [Counteroffers], [Approved Applications] )
+
+// Booking rate: approved applications that became an open account
+Booking Rate = DIVIDE ( [Booked Accounts], [Approved Applications] )
+
+// End-to-end conversion: submitted application -> open account
+Application to Account Rate = DIVIDE ( [Booked Accounts], [Total Applications] )
+
+// ---- Credit line ------------------------------------------------------------
+Avg Approved Limit =
+AVERAGEX (
+    FILTER ( fact_applications, fact_applications[decision] <> "Declined" ),
+    fact_applications[approved_limit]
+)
+
+Avg Booked Limit =
+AVERAGEX (
+    FILTER ( fact_applications, fact_applications[booked_flag] = 1 ),
+    fact_applications[approved_limit]
+)
+
+Avg FICO = AVERAGE ( fact_applications[fico_score] )
+
+// ---- Time intelligence ------------------------------------------------------
+Applications PM = CALCULATE ( [Total Applications], DATEADD ( DimDate[Date], -1, MONTH ) )
+
+Applications MoM % = DIVIDE ( [Total Applications] - [Applications PM], [Applications PM] )
+
+Applications PY = CALCULATE ( [Total Applications], SAMEPERIODLASTYEAR ( DimDate[Date] ) )
+
+Applications YoY % = DIVIDE ( [Total Applications] - [Applications PY], [Applications PY] )
+
+Approval Rate PY = CALCULATE ( [Approval Rate], SAMEPERIODLASTYEAR ( DimDate[Date] ) )
+
+Approval Rate YoY (pts) = ( [Approval Rate] - [Approval Rate PY] ) * 100
+
+Applications 3M Avg =
+AVERAGEX (
+    DATESINPERIOD ( DimDate[Date], MAX ( DimDate[Date] ), -3, MONTH ),
+    [Total Applications]
+)
+
+// ---- Executive summary text (dynamic card) ------------------------------------
+Trend Summary =
+VAR Yoy = [Applications YoY %]
+RETURN
+    "Applications " & IF ( Yoy >= 0, "up ", "down " )
+        & FORMAT ( ABS ( Yoy ), "0.0%" ) & " vs prior year; approval rate "
+        & FORMAT ( [Approval Rate], "0.0%" ) & ", booking rate "
+        & FORMAT ( [Booking Rate], "0.0%" ) & "."
